@@ -1,0 +1,19 @@
+[package]
+name = "hilbert"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+num-traits = "0.2"
+
+[lib]
+name = "hilbert"
+path = "src/lib.rs"
+
+[workspace]
+members = [".", "reference-impl", "bench"]
+default-members = ["."]
+
+[profile.release]
+opt-level = 3
+lto = true

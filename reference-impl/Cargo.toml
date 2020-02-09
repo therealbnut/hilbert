@@ -1,0 +1,13 @@
+[package]
+publish = false
+name = "hilbert-reference"
+version = "0.1.0"
+edition = "2018"
+
+[lib]
+name = "hilbert_reference"
+path = "lib.rs"
+doctest = false
+
+[dev-dependencies]
+hilbert = { path = ".." }

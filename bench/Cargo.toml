@@ -1,0 +1,22 @@
+[package]
+publish = false
+name = "hilbert-bench"
+version = "0.1.0"
+edition = "2018"
+
+[lib]
+test = false
+doctest = false
+
+[[bench]]
+name = "hilbert-bench"
+path = "src/bench.rs"
+test = false
+harness = false
+doctest = false
+
+[dependencies]
+hilbert = { path = ".." }
+hilbert-reference = { path = "../reference-impl" }
+
+criterion = "0.3.1"

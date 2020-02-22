@@ -49,19 +49,38 @@ impl<T> PartialEq<(T, T)> for HilbertPrecompute<T> where T: Interleavable {
     }
 }
 
+fn hilbert_cmp<T>(lhs: &HilbertPrecompute<T>, (rhs_x, rhs_y): (T, T)) -> Ordering
+    where T: Interleavable
+{
+    let matching_prefix = ((lhs.x ^ rhs_x) | (lhs.y ^ rhs_y)).leading_zeros() as usize;
+    if matching_prefix == bit_count::<T>() {
+        Ordering::Equal
+    }
+    else {
+        let loc_lhs = xy_local_dist(matching_prefix, lhs.x, lhs.y, lhs.flip, lhs.swap);
+        let loc_rhs = xy_local_dist(matching_prefix, rhs_x, rhs_y, lhs.flip, lhs.swap);
+        loc_lhs.cmp(&loc_rhs)
+    }
+}
+
 impl<T> PartialOrd<(T, T)> for HilbertPrecompute<T> where T: Interleavable {
     #[inline]
     fn partial_cmp(&self, that: &(T, T)) -> Option<Ordering> {
-        let (lhs_x, lhs_y, rhs_x, rhs_y) = (self.x, self.y, that.0, that.1);
-        let matching_prefix = ((lhs_x ^ rhs_x) | (lhs_y ^ rhs_y)).leading_zeros() as usize;
-        if matching_prefix == bit_count::<T>() {
-            Some(Ordering::Equal)
-        }
-        else {
-            let loc_lhs = xy_local_dist(matching_prefix, lhs_x, lhs_y, self.flip, self.swap);
-            let loc_rhs = xy_local_dist(matching_prefix, rhs_x, rhs_y, self.flip, self.swap);
-            loc_lhs.partial_cmp(&loc_rhs)
-        }
+        Some(hilbert_cmp(self, *that))
+    }
+}
+
+impl<T> PartialOrd for HilbertPrecompute<T> where T: Interleavable {
+    #[inline]
+    fn partial_cmp(&self, that: &Self) -> Option<Ordering> {
+        Some(hilbert_cmp(self, (that.x, that.y)))
+    }
+}
+
+impl<T> Ord for HilbertPrecompute<T> where T: Interleavable {
+    #[inline]
+    fn cmp(&self, that: &Self) -> Ordering {
+        hilbert_cmp(self, (that.x, that.y))
     }
 }
 

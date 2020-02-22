@@ -1,26 +1,78 @@
-use num_traits::int::PrimInt;
 use std::cmp::Ordering;
 
 use crate::{interleave_bits, Interleavable, bit_count, mask, mask_pow2_and_under};
+
+/// HilbertPrecompute
+#[derive(Eq, Hash, Clone, Copy)]
+pub struct HilbertPrecomputeData<T> where T: Interleavable {
+    flip: T,
+    swap: T,
+}
+
+impl<T> HilbertPrecomputeData<T> where T: Interleavable {
+    pub fn new(x: T, y: T) -> Self {
+        let bits_wide = bit_count::<T>();
+        let swap_pattern = mask::<T>(1);
+        let zeros = (x | y).leading_zeros() as usize;
+    
+        // if x == y
+        if zeros == bits_wide {
+            return Self { flip: T::zero(), swap: y };
+        }
+    
+        let mut bit: T = (T::one() << (bits_wide - 1)) >> zeros;
+        let mut flip: T = T::zero();
+        let mut swap: T = !swap_pattern & !(!T::zero() >> zeros);
+    
+        swap = swap | mask_pow2_and_under(swap & (bit << 1));
+    
+        // Consider turning this into T::Wider to combine with xy_mask.
+        let diff = x ^ y;
+        let (x, y) = (x, !y);
+    
+        while bit != T::zero() {
+            let xy_mask = (swap & diff) ^ flip;
+            swap = swap ^ mask_pow2_and_under((y ^ xy_mask) & bit);
+            flip = flip ^ mask_pow2_and_under((x ^ xy_mask) & bit & diff);
+            bit = bit >> 1;
+        }
+    
+        Self { flip, swap }
+    }
+}
+
+impl<T> PartialEq for HilbertPrecomputeData<T> where T: Interleavable {
+    #[inline]
+    fn eq(&self, that: &Self) -> bool {
+        self.flip == that.flip && self.swap == that.swap
+    }
+}
 
 /// HilbertPrecompute
 #[derive(PartialEq, Eq, Hash, Clone, Copy)]
 pub struct HilbertPrecompute<T> where T: Interleavable {
     x: T,
     y: T,
-    flip: T,
-    swap: T,
+    data: HilbertPrecomputeData<T>,
 }
 
 impl<T> HilbertPrecompute<T> where T: Interleavable {
     #[inline]
     pub fn new(x: T, y: T) -> Self {
-        let (flip, swap) = xy_flip_swap(x, y);
         Self {
             x,
             y,
-            flip,
-            swap
+            data: HilbertPrecomputeData::new(x, y),
+        }
+    }
+
+    #[inline]
+    pub fn new_with_data(x: T, y: T, data: HilbertPrecomputeData<T>) -> Self {
+        debug_assert!(HilbertPrecomputeData::new(x, y) == data);
+        Self {
+            x,
+            y,
+            data,
         }
     }
 
@@ -37,7 +89,7 @@ impl<T> HilbertPrecompute<T> where T: Interleavable {
     #[inline]
     pub fn distance(&self) -> T::Wider {
         let xy_diff = self.x ^ self.y;
-        let diff = (xy_diff & self.swap) ^ self.flip;
+        let diff = (xy_diff & self.data.swap) ^ self.data.flip;
         interleave_bits(self.x ^ diff, xy_diff)
     }
 }
@@ -57,8 +109,8 @@ fn hilbert_cmp<T>(lhs: &HilbertPrecompute<T>, (rhs_x, rhs_y): (T, T)) -> Orderin
         Ordering::Equal
     }
     else {
-        let loc_lhs = xy_local_dist(matching_prefix, lhs.x, lhs.y, lhs.flip, lhs.swap);
-        let loc_rhs = xy_local_dist(matching_prefix, rhs_x, rhs_y, lhs.flip, lhs.swap);
+        let loc_lhs = xy_local_dist(matching_prefix, lhs.x, lhs.y, lhs.data.flip, lhs.data.swap);
+        let loc_rhs = xy_local_dist(matching_prefix, rhs_x, rhs_y, lhs.data.flip, lhs.data.swap);
         loc_lhs.cmp(&loc_rhs)
     }
 }
@@ -82,36 +134,6 @@ impl<T> Ord for HilbertPrecompute<T> where T: Interleavable {
     fn cmp(&self, that: &Self) -> Ordering {
         hilbert_cmp(self, (that.x, that.y))
     }
-}
-
-fn xy_flip_swap<T>(x: T, y: T) -> (T, T) where T: PrimInt {
-    let bits_wide = bit_count::<T>();
-    let swap_pattern = mask::<T>(1);
-    let zeros = (x | y).leading_zeros() as usize;
-
-    // if x == y
-    if zeros == bits_wide {
-        return (T::zero(), y);
-    }
-
-    let mut bit: T = (T::one() << (bits_wide - 1)) >> zeros;
-    let mut flip: T = T::zero();
-    let mut swap: T = !swap_pattern & !(!T::zero() >> zeros);
-
-    swap = swap | mask_pow2_and_under(swap & (bit << 1));
-
-    // Consider turning this into T::Wider to combine with xy_mask.
-    let diff = x ^ y;
-    let (x, y) = (x, !y);
-
-    while bit != T::zero() {
-        let xy_mask = (swap & diff) ^ flip;
-        swap = swap ^ mask_pow2_and_under((y ^ xy_mask) & bit);
-        flip = flip ^ mask_pow2_and_under((x ^ xy_mask) & bit & diff);
-        bit = bit >> 1;
-    }
-
-    (flip, swap)
 }
 
 fn xy_local_dist<T>(log2_n: usize, x: T, y: T, flip: T, swap: T) -> T::Wider where T: Interleavable {

@@ -1,4 +1,4 @@
-pub use hilbert_precompute::HilbertPrecompute;
+pub use hilbert_precompute::{HilbertPrecompute, HilbertPrecomputeData};
 pub use interleave::Interleavable;
 
 use interleave::interleave_bits;

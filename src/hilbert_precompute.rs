@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 use crate::{interleave_bits, Interleavable, bit_count, mask, mask_pow2_and_under};
 
 /// HilbertPrecompute
-#[derive(Eq, Hash, Clone, Copy)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub struct HilbertPrecomputeData<T> where T: Interleavable {
     flip: T,
     swap: T,
@@ -41,15 +41,8 @@ impl<T> HilbertPrecomputeData<T> where T: Interleavable {
     }
 }
 
-impl<T> PartialEq for HilbertPrecomputeData<T> where T: Interleavable {
-    #[inline]
-    fn eq(&self, that: &Self) -> bool {
-        self.flip == that.flip && self.swap == that.swap
-    }
-}
-
 /// HilbertPrecompute
-#[derive(PartialEq, Eq, Hash, Clone, Copy)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub struct HilbertPrecompute<T> where T: Interleavable {
     x: T,
     y: T,

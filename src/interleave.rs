@@ -1,5 +1,5 @@
-use num_traits::{int::PrimInt, cast::FromPrimitive};
 use crate::{bit_count, mask, zero_high_bits};
+use num_traits::{cast::FromPrimitive, int::PrimInt};
 
 pub trait Interleavable: PrimInt + private::Sealed {
     type Wider: PrimInt + FromPrimitive;
@@ -38,19 +38,20 @@ pub fn interleave_bits<T: Interleavable>(lhs: T, rhs: T) -> T::Wider {
                 let (mask_lhs, mask_rhs) = (mask::<u32>(1) << 1, mask::<u32>(1));
                 let (lhs, rhs) = (lhs.to_u32().unwrap(), rhs.to_u32().unwrap());
                 let output = unsafe { _pdep_u32(lhs, mask_lhs) | _pdep_u32(rhs, mask_rhs) };
-                return <T::Wider as FromPrimitive>::from_u32(output).unwrap()
-            },
+                return <T::Wider as FromPrimitive>::from_u32(output).unwrap();
+            }
             64 => {
                 let (mask_lhs, mask_rhs) = (mask::<u64>(1) << 1, mask::<u64>(1));
                 let (lhs, rhs) = (lhs.to_u64().unwrap(), rhs.to_u64().unwrap());
                 let output = unsafe { _pdep_u64(lhs, mask_lhs) | _pdep_u64(rhs, mask_rhs) };
-                return <T::Wider as FromPrimitive>::from_u64(output).unwrap()
-            },
-            _ => {},
+                return <T::Wider as FromPrimitive>::from_u64(output).unwrap();
+            }
+            _ => {}
         }
     }
 
-    (interleave_with_zero(zero_high_bits(lhs.as_wider())) << 1) | interleave_with_zero(zero_high_bits(rhs.as_wider()))
+    (interleave_with_zero(zero_high_bits(lhs.as_wider())) << 1)
+        | interleave_with_zero(zero_high_bits(rhs.as_wider()))
 }
 
 #[inline]

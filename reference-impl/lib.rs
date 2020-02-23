@@ -35,11 +35,11 @@ mod tests {
     fn test_brute_distance() {
         let n = 32;
 
-        for x0 in 0 .. n {
-            for y0 in 0 .. n {
+        for x0 in 0..n {
+            for y0 in 0..n {
                 let d0 = xy2d(x0, y0);
                 let precompute = HilbertPrecompute::new(x0, y0);
-    
+
                 assert_eq!(d0, precompute.distance());
             }
         }
@@ -49,13 +49,13 @@ mod tests {
     fn test_brute_compare() {
         let n = 32;
 
-        for x0 in 0 .. n {
-            for y0 in 0 .. n {
+        for x0 in 0..n {
+            for y0 in 0..n {
                 let d0 = xy2d(x0, y0);
                 let precompute = HilbertPrecompute::new(x0, y0);
 
-                for x1 in 0 .. n {
-                    for y1 in 0 .. n {
+                for x1 in 0..n {
+                    for y1 in 0..n {
                         let d1 = xy2d(x1, y1);
                         assert_eq!(d0.partial_cmp(&d1), precompute.partial_cmp(&(x1, y1)));
                     }
@@ -63,6 +63,4 @@ mod tests {
             }
         }
     }
-
 }
-

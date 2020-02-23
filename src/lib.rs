@@ -1,9 +1,9 @@
 pub use hilbert_precompute::{HilbertPrecompute, HilbertPrecomputeData};
 pub use interleave::Interleavable;
 
+use bit_util::{bit_count, mask, mask_pow2_and_under, zero_high_bits};
 use interleave::interleave_bits;
-use bit_util::{mask, zero_high_bits, bit_count, mask_pow2_and_under};
 
-pub mod interleave;
-pub mod hilbert_precompute;
 mod bit_util;
+pub mod hilbert_precompute;
+pub mod interleave;
